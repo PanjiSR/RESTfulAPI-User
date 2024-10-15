@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -63,5 +65,53 @@ class UserTest extends TestCase
             ]);
     }
 
+    public function testLoginSuccess()
+    {
+        $this->seed([UserSeeder::class]);
+        $this->post('/api/users/login', [
+            'username' => 'panji',
+            'password' => 'password'
+        ])->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'username' => 'panji',
+                    'name' => 'Panji Syamsul Rizal'
+                ]
+                ]);
+
+        $user = User::where('username', 'panji')->first();
+        self::assertNotNull($user->token);
+    }
+
+    public function testLoginFailedUsernameNotFound()
+    {
+        $this->post('/api/users/login', [
+            'username' => 'panji',
+            'password' => 'password'
+        ])->assertStatus(401)
+            ->assertJson([
+                'errors' => [
+                    "message" => [
+                        "username or password wrong" 
+                    ]
+                ]
+                ]);
+    }
+
+    public function testLoginFailedPasswordWrong()
+    {
+        $this->seed([UserSeeder::class]);
+        $this->post('/api/users/login', [
+            'username' => 'panji',
+            'password' => 'halo'
+        ])->assertStatus(401)
+            ->assertJson([
+                'errors' => [
+                    "message" => [
+                        "username or password wrong" 
+                    ]
+                ]
+                ]);
+    }
 
 }
